@@ -1,24 +1,23 @@
 
 ---
 
-大家好我是xiaoxiao，源码源于Drinkhuahuaniu老哥！！
+大家好我是xiaoxiao，源码源于Drinkhuahuaniu老哥！！  
 链接：https://github.com/Drinkhuahuaniu/INShuaKe  
 因不能使用了，我就简单的修一下，结果不小心修多了导致不能推了，只好另开族谱了  
-我用的win10，其他不知道能不能用。
-如果该软件不能用了，请告诉我，我会慢慢更新。。。
-链接：https://github.com/xiaoxiaoxoxoxoxo/INShuaKe
+我用的win10，其他不知道能不能用。  
+如果该软件不能用了，请告诉我，我会慢慢更新。。。  
+链接：https://github.com/xiaoxiaoxoxoxoxo/INShuaKe  
 
-【此程序免费，仅供学习交流】 
+#【此程序免费，仅供学习交流】 
 
-【此程序免费，仅供学习交流】 
+#【此程序免费，仅供学习交流】 
 
-【此程序免费，仅供学习交流】 
+#【此程序免费，仅供学习交流】 
 
-干部网络学院刷课
+###干部网络学院刷课  
+##更新时间2026年3月17日  
 
-更新时间2026年3月17日
-
-【目录结构】
+#【目录结构】
 
 ```
 刷课程序/
@@ -40,13 +39,13 @@
 └── start_gui.bat        # 运行程序脚本，点开直接运行刷课时
 ```
 
-【核心文件】  
+#【核心文件】  
 
 · getcourseid.py    - 课程ID获取模块  
 · cdb.py            - 数据库模块  
 · config.py         - 配置账户、密码、学习网站  
 
-【资源文件】  
+#【资源文件】  
 
 · README.md         - 说明文档  
 · requirements.txt  - 依赖列表  
@@ -55,7 +54,7 @@
 
 ---
 
-【打包篇】  
+#【打包篇】  
 
 build_onedir.bat               # 打包脚本  
 刷课程序_完整版.spec           # 打包脚本运行后的临时文件（不用管，可删）  
