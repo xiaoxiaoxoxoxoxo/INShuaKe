@@ -2,9 +2,9 @@
 ---
 
 大家好我是xiaoxiao，源码源于Drinkhuahuaniu老哥！！
-链接：https://github.com/Drinkhuahuaniu/INShuaKe
-
-因不能使用了，我就简单的修一下，我用的win10，其他不知道能不能用。
+链接：https://github.com/Drinkhuahuaniu/INShuaKe  
+因不能使用了，我就简单的修一下，结果不小心修多了导致不能推了，只好另开族谱了  
+我用的win10，其他不知道能不能用。
 如果该软件不能用了，请告诉我，我会慢慢更新。。。
 链接：https://github.com/xiaoxiaoxoxoxoxo/INShuaKe
 
@@ -81,7 +81,7 @@ templates、images、debug、config、__pycache__、release
 └── 刷课程序_完整版.exe             # 主入口（点击开始）
 ```
 
-如果嫌打包麻烦，我这有现成打包好的exe文件夹（初始配置需要多打开几次）
+如果嫌打包麻烦，我这有现成打包好的exe文件夹（初始配置需要多打开几次）  
 → https://share.feijipan.com/s/z31Jg7Xc
 
 ---
