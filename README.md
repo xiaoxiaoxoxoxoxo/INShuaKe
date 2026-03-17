@@ -81,7 +81,8 @@ templates、images、debug、config、__pycache__、release
 └── 刷课程序_完整版.exe             # 主入口（点击开始）
 ```
 
-如果嫌打包麻烦，我这有现成打包好的exe文件夹（初始配置需要多打开几次）  
-→ https://share.feijipan.com/s/z31Jg7Xc
+如果嫌打包麻烦，请联系作者微信号：aioogg  
+我这有现成打包好的rar压缩包，内exe直接使用。  
+
 
 ---
