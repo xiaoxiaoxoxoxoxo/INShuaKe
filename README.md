@@ -1,18 +1,18 @@
 
 ---
 
-大家好我是xiaoxiao，源码源于Drinkhuahuaniu老哥！！  
-链接：https://github.com/Drinkhuahuaniu/INShuaKe  
-因不能使用了，我就简单的修一下，结果不小心修多了导致不能推了，只好另开族谱了  
-我用的win10，其他不知道能不能用。  
-如果该软件不能用了，请告诉我，我会慢慢更新。。。  
-链接：https://github.com/xiaoxiaoxoxoxoxo/INShuaKe  
+大家好我是xiaoxiao，源码源于Drinkhuahuaniu老哥！！      
+链接：https://github.com/Drinkhuahuaniu/INShuaKe      
+因不能使用了，我就简单的修一下，结果不小心修多了导致不能推了，只好另开族谱了     
+我用的win10，其他不知道能不能用。    
+如果该软件不能用了，请告诉我，我会慢慢更新。      
+链接：https://github.com/xiaoxiaoxoxoxoxo/INShuaKe    
 
-【此程序免费，仅供学习交流】 
+【此程序免费，仅供学习交流】  
 
-【此程序免费，仅供学习交流】 
+【此程序免费，仅供学习交流】  
 
-【此程序免费，仅供学习交流】 
+【此程序免费，仅供学习交流】  
 
 干部网络学院刷课  
 更新时间2026年3月17日  
