@@ -1,6 +1,6 @@
 # gui_main.py
 """
-刷课程序图形界面主入口 - 最终修复版
+刷课程序图形界面主入口 - 最终修复版（带定时功能）
 """
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
@@ -10,13 +10,14 @@ import os
 import sys
 import re
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, time
 import signal
 import asyncio
 import importlib.util
 import warnings
 import ctypes
 import io
+import time as timelib
 warnings.filterwarnings("ignore")
 
 # 判断是否在打包环境中
@@ -32,6 +33,7 @@ if IS_FROZEN and sys.platform == 'win32':
 # 设置控制台编码（仅在开发环境中）
 if not IS_FROZEN and sys.platform == 'win32':
     try:
+        import codecs
         if sys.stdout and hasattr(sys.stdout, 'buffer'):
             sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'ignore')
         if sys.stderr and hasattr(sys.stderr, 'buffer'):
@@ -71,7 +73,9 @@ class ConfigManager:
             'COURSER_LINK': 'https://www.hngbwlxy.gov.cn/#/courseCenter/courselist?channelId=',
             'ENABLE_TEMPLATE_CAPTURE': 'False',
             'HEADLESS_MODE': 'False',
-            'DEBUG_MODE': 'True'
+            'DEBUG_MODE': 'True',
+            'AUTO_START_ENABLED': 'False',  # 定时开关
+            'AUTO_START_TIME': '06:00'       # 定时时间
         }
         
         try:
@@ -125,6 +129,10 @@ COURSER_LINK = "{kwargs.get('COURSER_LINK', 'https://www.hngbwlxy.gov.cn/#/cours
 ENABLE_TEMPLATE_CAPTURE = {kwargs.get('ENABLE_TEMPLATE_CAPTURE', 'False')}
 HEADLESS_MODE = {kwargs.get('HEADLESS_MODE', 'False')}
 DEBUG_MODE = {kwargs.get('DEBUG_MODE', 'True')}
+
+# 定时任务配置
+AUTO_START_ENABLED = {kwargs.get('AUTO_START_ENABLED', 'False')}
+AUTO_START_TIME = "{kwargs.get('AUTO_START_TIME', '06:00')}"
 """
             
             with open(cls.CONFIG_PATH, 'w', encoding='utf-8') as f:
@@ -174,7 +182,7 @@ class ShuakeGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("作者：笑笑")
-        self.root.geometry("900x700")
+        self.root.geometry("900x750")
         self.root.resizable(True, True)
         
         # 设置图标
@@ -190,6 +198,8 @@ class ShuakeGUI:
         self.process_thread = None
         self.is_running = False
         self.shuake_instance = None
+        self.timer_thread = None
+        self.timer_running = False
         
         # 加载配置
         self.config = ConfigManager.read_config()
@@ -199,6 +209,9 @@ class ShuakeGUI:
         
         # 绑定关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
+        # 启动定时器检查线程
+        self.start_timer_check()
     
     def create_widgets(self):
         """创建界面组件"""
@@ -262,9 +275,38 @@ class ShuakeGUI:
         apply_switch_btn = ttk.Button(switch_frame, text="应用开关设置", command=self.apply_switches)
         apply_switch_btn.grid(row=3, column=0, pady=10)
         
+        # ========== 定时任务区域 ==========
+        timer_frame = ttk.LabelFrame(main_frame, text="定时任务", padding="10")
+        timer_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        
+        # 定时开关
+        self.auto_start_var = tk.BooleanVar(value=self.config.get('AUTO_START_ENABLED') == 'True')
+        ttk.Checkbutton(timer_frame, text="早上6点自动开启学习", 
+                       variable=self.auto_start_var,
+                       command=self.toggle_timer).grid(row=0, column=0, sticky=tk.W, pady=2)
+        
+        # 定时时间设置（支持自定义时间）
+        ttk.Label(timer_frame, text="定时时间:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        
+        time_frame = ttk.Frame(timer_frame)
+        time_frame.grid(row=1, column=1, sticky=tk.W, padx=5, pady=2)
+        
+        self.hour_var = tk.StringVar(value=self.config.get('AUTO_START_TIME', '06:00').split(':')[0])
+        self.minute_var = tk.StringVar(value=self.config.get('AUTO_START_TIME', '06:00').split(':')[1])
+        
+        hour_spinbox = ttk.Spinbox(time_frame, from_=0, to=23, width=5, textvariable=self.hour_var, format="%02.0f")
+        hour_spinbox.grid(row=0, column=0)
+        ttk.Label(time_frame, text=":").grid(row=0, column=1)
+        minute_spinbox = ttk.Spinbox(time_frame, from_=0, to=59, width=5, textvariable=self.minute_var, format="%02.0f")
+        minute_spinbox.grid(row=0, column=2)
+        
+        # 当前定时状态显示
+        self.timer_status_var = tk.StringVar(value="定时任务: 未启用")
+        ttk.Label(timer_frame, textvariable=self.timer_status_var, foreground="blue").grid(row=2, column=0, columnspan=2, pady=5)
+        
         # ========== 控制按钮区域 ==========
         control_frame = ttk.Frame(main_frame)
-        control_frame.grid(row=2, column=0, columnspan=2, pady=10)
+        control_frame.grid(row=3, column=0, columnspan=2, pady=10)
         
         self.start_btn = ttk.Button(control_frame, text="开始学习", command=self.start_learning, width=15)
         self.start_btn.grid(row=0, column=0, padx=5)
@@ -277,7 +319,7 @@ class ShuakeGUI:
         
         # ========== 日志显示区域 ==========
         log_frame = ttk.LabelFrame(main_frame, text="运行日志", padding="10")
-        log_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+        log_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
         
@@ -289,6 +331,7 @@ class ShuakeGUI:
         self.log_text.tag_config("error", foreground="red")
         self.log_text.tag_config("success", foreground="green")
         self.log_text.tag_config("info", foreground="blue")
+        self.log_text.tag_config("warning", foreground="orange")
         
         # 重定向输出 - 使用线程安全的版本
         self.redirect = RedirectText(self.log_text)
@@ -298,7 +341,7 @@ class ShuakeGUI:
         # 状态栏
         self.status_var = tk.StringVar(value="就绪")
         status_bar = ttk.Label(main_frame, textvariable=self.status_var, relief=tk.SUNKEN)
-        status_bar.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        status_bar.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
     
     def save_config(self):
         """保存配置"""
@@ -308,12 +351,15 @@ class ShuakeGUI:
             'COURSER_LINK': self.course_link_var.get().strip(),
             'ENABLE_TEMPLATE_CAPTURE': str(self.template_var.get()),
             'HEADLESS_MODE': str(self.headless_var.get()),
-            'DEBUG_MODE': str(self.debug_var.get())
+            'DEBUG_MODE': str(self.debug_var.get()),
+            'AUTO_START_ENABLED': str(self.auto_start_var.get()),
+            'AUTO_START_TIME': f"{int(self.hour_var.get()):02d}:{int(self.minute_var.get()):02d}"
         }
         
         if ConfigManager.write_config(**config_data):
             messagebox.showinfo("成功", "配置保存成功！")
             self.status_var.set("配置已保存")
+            self.update_timer_status()
         else:
             messagebox.showerror("错误", "配置保存失败！")
     
@@ -323,12 +369,72 @@ class ShuakeGUI:
         config_data['ENABLE_TEMPLATE_CAPTURE'] = str(self.template_var.get())
         config_data['HEADLESS_MODE'] = str(self.headless_var.get())
         config_data['DEBUG_MODE'] = str(self.debug_var.get())
+        config_data['AUTO_START_ENABLED'] = str(self.auto_start_var.get())
+        config_data['AUTO_START_TIME'] = f"{int(self.hour_var.get()):02d}:{int(self.minute_var.get()):02d}"
         
         if ConfigManager.write_config(**config_data):
             messagebox.showinfo("成功", "开关设置已应用！")
             self.status_var.set("开关设置已应用")
+            self.update_timer_status()
         else:
             messagebox.showerror("错误", "开关设置失败！")
+    
+    def toggle_timer(self):
+        """切换定时器状态"""
+        self.save_config()
+        if self.auto_start_var.get():
+            self.log_text.insert(tk.END, f"定时任务已开启，将在每天 {int(self.hour_var.get()):02d}:{int(self.minute_var.get()):02d} 自动开始学习\n", "info")
+        else:
+            self.log_text.insert(tk.END, "定时任务已关闭\n", "warning")
+        self.update_timer_status()
+    
+    def update_timer_status(self):
+        """更新定时器状态显示"""
+        if self.auto_start_var.get():
+            self.timer_status_var.set(f"定时任务: 已开启 (每天 {int(self.hour_var.get()):02d}:{int(self.minute_var.get()):02d} 自动开始)")
+        else:
+            self.timer_status_var.set("定时任务: 未启用")
+    
+    def start_timer_check(self):
+        """启动定时检查线程"""
+        self.timer_running = True
+        self.timer_thread = threading.Thread(target=self.check_timer, daemon=True)
+        self.timer_thread.start()
+    
+    def check_timer(self):
+        """检查定时任务"""
+        while self.timer_running:
+            try:
+                if self.auto_start_var.get() and not self.is_running:
+                    current_time = datetime.now().time()
+                    target_hour = int(self.hour_var.get())
+                    target_minute = int(self.minute_var.get())
+                    target_time = time(target_hour, target_minute)
+                    
+                    # 检查是否到达指定时间（允许1分钟的误差）
+                    if (current_time.hour == target_time.hour and 
+                        current_time.minute == target_time.minute):
+                        
+                        self.root.after(0, self.auto_start_learning)
+                        
+                        # 避免重复触发，等待一分钟
+                        timelib.sleep(60)
+                
+                # 每秒检查一次
+                timelib.sleep(1)
+                
+            except Exception as e:
+                print(f"定时检查错误: {e}")
+                timelib.sleep(5)
+    
+    def auto_start_learning(self):
+        """自动开始学习"""
+        self.log_text.insert(tk.END, f"\n{'='*60}\n", "info")
+        self.log_text.insert(tk.END, f"定时任务触发 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n", "success")
+        self.log_text.insert(tk.END, f"{'='*60}\n\n", "info")
+        
+        if not self.is_running:
+            self.start_learning()
     
     def start_learning(self):
         """开始学习"""
@@ -499,13 +605,18 @@ class ShuakeGUI:
     
     def on_closing(self):
         """关闭窗口时的处理"""
+        self.timer_running = False
         if self.is_running:
             if messagebox.askyesno("确认", "程序正在运行中，确定要退出吗？"):
                 self.stop_learning()
                 if self.process_thread and self.process_thread.is_alive():
                     self.process_thread.join(timeout=2)
+                if self.timer_thread and self.timer_thread.is_alive():
+                    self.timer_thread.join(timeout=1)
                 self.root.destroy()
         else:
+            if self.timer_thread and self.timer_thread.is_alive():
+                self.timer_thread.join(timeout=1)
             self.root.destroy()
 
 
