@@ -53,6 +53,7 @@
 ---
 
 **二、打包篇**   
+1.打包文件
 ```
 build_onedir.bat                # 打包脚本  
 刷课程序_完整版.spec             # 打包脚本运行后的临时文件（不用管，可删）  
@@ -62,7 +63,7 @@ dist/                           # 打包后的exe存放位置
 build_onedir.bat 打包程序，点击后打包成exe，把以下6个文件夹复制到 ./dist/刷课程序_完整版/：  
 templates、images、debug、config、__pycache__、release  
 
-打包后排版如下：
+2.打包后排版如下：
 ```
 ./dist/刷课程序_完整版/
 ├── __pycache__
@@ -75,9 +76,6 @@ templates、images、debug、config、__pycache__、release
 ├── templates                       # 精确模版采集【注意：请手动把错位的验证码删除（100张可能会出现2-3张）】
 ├── courses.db                      # 数据库文件（自动生成）
 └── 刷课程序_完整版.exe              # 主入口（点击开始）
-```
-
-如果嫌打包麻烦，请联系作者微信号：aioogg  
-我这有现成打包好的rar压缩包，内exe直接使用。  
+```  
 
 ---
